@@ -1,0 +1,36 @@
+## Interface: 50500
+## Title: AuctioneersLedgerMoP
+## Author: Clint Seewald (CS&A-Software)
+## Version: 1.0.0
+## Notes: Release – Auctioneer’s Ledger is now fully compatible with Mists of Pandaria Classic! Enjoy comprehensive inventory and auction tracking, plus the AL Blaster for lightning-fast posting and cancellation.
+## SavedVariables: AL_SavedData, AuctioneersLedgerFinances
+## DefaultState: enabled
+## IconTexture: Interface\Icons\inv_misc_book_09
+## OptionalDeps: LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0
+
+# Libraries
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+
+# Addon Files - Load order is critical
+AuctioneersLedgerMoP.lua
+Constants.lua
+Finances.lua
+Data.lua
+GUI_Utils.lua
+GUI_Elements.lua
+GUI_CoreFrames.lua
+GUI_Layout.lua
+GUI_Display.lua
+GUI_Popups.lua
+BlasterPostingLogic.lua
+BlasterAutoPricing.lua
+BlasterInventoryScan.lua
+BlasterEngine.lua
+GUI_BlasterHistory.lua
+BlasterInterface.lua
+Hooks.lua
+CancelAuctions.lua
+Core.lua
