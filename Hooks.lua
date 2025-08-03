@@ -369,6 +369,9 @@ function AL:InitializeVendorHooks()
     end
 
     hooksecurefunc("BuyMerchantItem", function(index, quantity)
+        -- [[ DIRECTIVE: Set flag to identify this as a vendor purchase ]]
+        AL.isVendorPurchase = true
+        
         if not index then return end
         
         local itemLink = GetMerchantItemLink(index)
@@ -388,41 +391,6 @@ function AL:InitializeVendorHooks()
 
             local totalPrice = math.floor(pricePerItem * itemsToBuy)
             handleVendorPurchase(itemLink, itemID, totalPrice, itemsToBuy)
-        end
-    end)
-    
-    hooksecurefunc("BuybackItem", function(index)
-        if not index then return end
-
-        local itemLink = GetBuybackItemLink(index)
-        if not itemLink then return end
-
-        local itemID = AL:GetItemIDFromLink(itemLink)
-        local _, _, price, stackSize = GetBuybackItemInfo(index)
-        
-        if itemID and price and price > 0 then
-            local totalItems = stackSize or 1
-            local totalPrice = price
-            handleVendorPurchase(itemLink, itemID, totalPrice, totalItems)
-        end
-    end)
-
-    hooksecurefunc(C_Container, "UseContainerItem", function(bag, slot)
-        if not MerchantFrame or not MerchantFrame:IsShown() then return end
-        
-        local itemLink = C_Container.GetContainerItemLink(bag, slot)
-        if not itemLink then return end
-        
-        local sellPrice = select(11, GetItemInfo(itemLink))
-        if sellPrice and sellPrice > 0 then
-            local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
-            local itemCount = itemInfo and itemInfo.stackCount or 1
-            local totalPrice = sellPrice * itemCount
-            local itemID = AL:GetItemIDFromLink(itemLink)
-            
-            if itemID then 
-                AL:RecordTransaction("SELL", "VENDOR", itemID, totalPrice, itemCount) 
-            end
         end
     end)
     

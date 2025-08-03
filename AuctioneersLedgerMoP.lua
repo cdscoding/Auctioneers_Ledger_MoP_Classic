@@ -95,6 +95,7 @@ AL.cancellationProcessedForID = nil -- SURGICAL ADDITION
 AL.previousMoney = 0
 AL.lastKnownPurchaseDetails = nil
 AL.lastKnownMoneySpent = 0
+AL.isVendorPurchase = false -- [[ DIRECTIVE: Add flag to prevent money event misfires ]]
 
 -- Caching for mail processing
 AL.salesItemCache = {}

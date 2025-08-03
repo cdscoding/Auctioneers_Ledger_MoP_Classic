@@ -53,11 +53,14 @@ function AL:ProcessAuctionCancellation(auctionInfo)
     })
 
     -- 4. Set the location flag so the ledger knows the item is in the mail.
-    -- This is the core fix for the location tracking requirement.
+    -- [[ DIRECTIVE #4 START: Update location on cancellation ]]
     local itemEntry = _G.AL_SavedData.Items and _G.AL_SavedData.Items[itemID]
     if itemEntry and itemEntry.characters and itemEntry.characters[charKey] then
-        itemEntry.characters[charKey].awaitingMailAfterAuctionCancel = true
+        local charData = itemEntry.characters[charKey]
+        charData.isExpectedInMail = true
+        charData.expectedMailCount = (charData.expectedMailCount or 0) + quantity
     end
+    -- [[ DIRECTIVE #4 END ]]
 
     -- 5. If we found a matching pending auction, remove it from the list.
     if pendingAuctionIndexToRemove and pendingAuctions then
@@ -67,6 +70,51 @@ function AL:ProcessAuctionCancellation(auctionInfo)
     -- 6. Refresh UI and caches to reflect the changes.
     self:RefreshBlasterHistory()
     self:BuildSalesCache()
+end
+
+-- [[ DIRECTIVE: New function to reconcile internal mail state with live mail data ]]
+function AL:ReconcileLootedMail()
+    local liveMailCounts = {}
+    -- Step 1: Perform a safe, live scan of the current character's mailbox.
+    if type(GetInboxNumItems) == "function" then
+        for mailIndex = 1, GetInboxNumItems() do
+            local _, _, _, _, _, _, _, hasItem = GetInboxHeaderInfo(mailIndex)
+            if hasItem then
+                for attachIndex = 1, AL.MAX_MAIL_ATTACHMENTS_TO_SCAN do
+                    local mailItemLink = GetInboxItemLink(mailIndex, attachIndex)
+                    if mailItemLink then
+                        local itemID = self:GetItemIDFromLink(mailItemLink)
+                        local _, _, mailItemCount = GetInboxItem(mailIndex, attachIndex)
+                        -- Defensive check to prevent the "massive number" bug.
+                        if itemID and type(mailItemCount) == "number" and mailItemCount > 0 then
+                            liveMailCounts[itemID] = (liveMailCounts[itemID] or 0) + mailItemCount
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Step 2: Compare the live data against our internal "expected" state.
+    local charKey = UnitName("player") .. "-" .. GetRealmName()
+    for itemID, itemData in pairs(_G.AL_SavedData.Items or {}) do
+        if itemData.characters and itemData.characters[charKey] then
+            local charData = itemData.characters[charKey]
+            if charData.isExpectedInMail then
+                local currentLiveCount = liveMailCounts[tonumber(itemID)] or 0
+                -- If the number of items we expect is greater than what's actually
+                -- in the mail, it means items have been looted.
+                if charData.expectedMailCount > currentLiveCount then
+                    charData.expectedMailCount = currentLiveCount
+                end
+                -- If the count is now zero, clear the flag entirely.
+                if charData.expectedMailCount <= 0 then
+                    charData.isExpectedInMail = false
+                    charData.expectedMailCount = 0
+                end
+            end
+        end
+    end
 end
 
 function AL:ReconcileHistory(newItemID, newItemName)
@@ -256,7 +304,8 @@ function AL:InternalAddItem(itemLink, forCharName, forCharRealm)
 
     _G.AL_SavedData.Items[itemID].characters[charKey] = {
         characterName = forCharName, characterRealm = forCharRealm, itemLink = realItemLink, itemRarity = itemRarity,
-        lastVerifiedLocation = nil, lastVerifiedCount = 0, lastVerifiedTimestamp = 0, awaitingMailAfterAuctionCancel = false,
+        lastVerifiedLocation = nil, lastVerifiedCount = 0, lastVerifiedTimestamp = 0, 
+        isExpectedInMail = false, expectedMailCount = 0,
         safetyNetBuyout = 0, normalBuyoutPrice = 0, undercutAmount = 0, autoUpdateFromMarket = true,
         auctionSettings = { duration = 720, quantity = defaultQuantity },
         marketData = { lastScan = 0, minBuyout = 0, marketValue = 0, numAuctions = 0, ALMarketPrice = 0 },
@@ -357,10 +406,7 @@ function AL:TriggerDebouncedRefresh(reason)
     end)
 end
 
---[[ SURGICAL REWRITE: MULTI-LOCATION TRACKING ]]
--- This function has been completely rewritten. Instead of returning a single location,
--- it now returns a list of tables, with each table representing a distinct location
--- where the item was found.
+--[[ SURGICAL REWRITE: MULTI-LOCATION TRACKING & MAIL LOGIC ]]
 function AL:GetItemOwnershipDetails(charData_in)
     local results = {}
     
@@ -432,32 +478,15 @@ function AL:GetItemOwnershipDetails(charData_in)
         end
         if ahCount > 0 then
             table.insert(results, createDetails(AL.LOCATION_AUCTION_HOUSE, ahCount, false))
-            charData.awaitingMailAfterAuctionCancel = false -- If we see it on AH, it's not in mail
             itemFoundLiveThisPass = true
         end
 
-        -- 2. Check Mail
-        local mailCount = 0
-        local isMailOpen = MailFrame and MailFrame:IsShown()
-        if isMailOpen or charData.awaitingMailAfterAuctionCancel then
-             if type(GetInboxNumItems) == "function" then
-                 for mailIndex = 1, GetInboxNumItems() do
-                    local _, _, _, _, _, _, _, hasItem = GetInboxHeaderInfo(mailIndex)
-                    if hasItem then
-                        for attachIndex = 1, AL.MAX_MAIL_ATTACHMENTS_TO_SCAN do
-                            local mailItemLink = GetInboxItemLink(mailIndex, attachIndex)
-                            if mailItemLink and self:GetItemIDFromLink(mailItemLink) == itemID then
-                                local _, _, mailItemCount = GetInboxItem(mailIndex, attachIndex)
-                                mailCount = mailCount + (mailItemCount or 0)
-                            end
-                        end
-                    end
-                 end
-             end
-        end
-        if mailCount > 0 then
-            table.insert(results, createDetails(AL.LOCATION_MAIL, mailCount, false))
-            charData.awaitingMailAfterAuctionCancel = false -- We found it, so clear the flag
+        -- 2. Check Mail (Internal State Only)
+        -- The live mail scan has been removed to fix the bug and follow the new directive.
+        -- We now ONLY show mail items if our internal tracker says they should be there.
+        if charData.isExpectedInMail and (charData.expectedMailCount or 0) > 0 then
+            -- The note is now blank, and it's not considered "stale" because it's an intentional state.
+            table.insert(results, createDetails(AL.LOCATION_MAIL, charData.expectedMailCount, false, ""))
             itemFoundLiveThisPass = true
         end
 
@@ -487,8 +516,9 @@ function AL:GetItemOwnershipDetails(charData_in)
     -- If we are not on the correct character OR if no live items were found, use stale data.
     if not itemFoundLiveThisPass then
         local lastLocation = charData.lastVerifiedLocation
-        if isCurrentCharacterItemForPersonalCheck and charData.awaitingMailAfterAuctionCancel then
-             table.insert(results, createDetails(AL.LOCATION_MAIL, charData.lastVerifiedCount, true, "Returning from AH"))
+        -- Show expected mail for alts as well, but mark it as stale.
+        if charData.isExpectedInMail and (charData.expectedMailCount or 0) > 0 then
+             table.insert(results, createDetails(AL.LOCATION_MAIL, charData.expectedMailCount, true, ""))
         elseif lastLocation and charData.lastVerifiedCount > 0 then
             local notes = ""
             if lastLocation == AL.LOCATION_MAIL then notes = "Inside mailbox."
@@ -504,7 +534,8 @@ function AL:GetItemOwnershipDetails(charData_in)
             charData.lastVerifiedLocation = AL.LOCATION_LIMBO
             charData.lastVerifiedCount = 0
             charData.lastVerifiedTimestamp = GetTime()
-            charData.awaitingMailAfterAuctionCancel = false
+            charData.isExpectedInMail = false
+            charData.expectedMailCount = 0
         end
     end
     

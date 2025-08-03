@@ -505,6 +505,15 @@ StaticPopupDialogs["AL_CONFIRM_TRACK_NEW_PURCHASE"] = {
             local success, msg = AL:InternalAddItem(data.itemLink, UnitName("player"), GetRealmName())
             if success then
                 AL:RecordTransaction("BUY", "AUCTION", data.itemID, data.price, data.quantity)
+                -- [[ DIRECTIVE #3 START: Update location on purchase for new items ]]
+                local charKey = UnitName("player") .. "-" .. GetRealmName()
+                local itemEntry = _G.AL_SavedData.Items and _G.AL_SavedData.Items[data.itemID]
+                if itemEntry and itemEntry.characters and itemEntry.characters[charKey] then
+                    local charData = itemEntry.characters[charKey]
+                    charData.isExpectedInMail = true
+                    charData.expectedMailCount = (charData.expectedMailCount or 0) + data.quantity
+                end
+                -- [[ DIRECTIVE #3 END ]]
                 AL:RefreshLedgerDisplay()
             end
         end
@@ -538,8 +547,6 @@ StaticPopupDialogs["AL_CONFIRM_TRACK_NEW_VENDOR_PURCHASE"] = {
             if success then
                 AL:RecordTransaction("BUY", "VENDOR", data.itemID, data.price, data.quantity)
                 AL:RefreshLedgerDisplay()
-            else
-                -- Intentionally empty
             end
         end
     end,

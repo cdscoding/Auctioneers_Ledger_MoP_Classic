@@ -68,6 +68,15 @@ function AL:ProcessPurchase(itemName, itemLink, quantity, price)
     
     if isTracked then
         self:RecordTransaction("BUY", "AUCTION", itemID, price, quantity)
+        -- [[ DIRECTIVE #3 START: Update location on purchase for existing items ]]
+        local charKey = UnitName("player") .. "-" .. GetRealmName()
+        local itemEntry = _G.AL_SavedData.Items and _G.AL_SavedData.Items[itemID]
+        if itemEntry and itemEntry.characters and itemEntry.characters[charKey] then
+            local charData = itemEntry.characters[charKey]
+            charData.isExpectedInMail = true
+            charData.expectedMailCount = (charData.expectedMailCount or 0) + quantity
+        end
+        -- [[ DIRECTIVE #3 END ]]
     else
         StaticPopup_Show("AL_CONFIRM_TRACK_NEW_PURCHASE", itemName, nil, { itemName = itemName, itemLink = itemLink, itemID = itemID, price = price, quantity = quantity })
     end
@@ -240,18 +249,33 @@ eventHandlerFrame:SetScript("OnEvent", function(selfFrame, event, ...)
                         cost = moneySpent,
                         time = GetTime()
                     }
-                    AL:TryToMatchEvents()
+                    if not AL.isVendorPurchase then
+                        AL:TryToMatchEvents()
+                    end
                 end
             end
             AL.previousMoney = currentMoney
+            -- [[ DIRECTIVE: Manually reset the flag AFTER the event has been processed ]]
+            AL.isVendorPurchase = false
 
+        -- [[ DIRECTIVE: Mail logic rewrite ]]
         elseif event == "MAIL_INBOX_UPDATE" then
             if AL.mailRefreshTimer then AL.mailRefreshTimer:SetScript("OnUpdate", nil); AL.mailRefreshTimer = nil; end
             AL.mailRefreshTimer = CreateDelayedCall(AL.MAIL_REFRESH_DELAY, function()
+                -- Process sales first to update pending auction lists
                 AL:ProcessInboxForSales()
+                -- Now, reconcile our internal mail state with what's actually in the mail
+                AL:ReconcileLootedMail()
+                -- Finally, refresh the UI with the corrected data
                 AL:TriggerDebouncedRefresh(event)
                 AL.mailRefreshTimer = nil
             end)
+        -- [[ END: Mail logic rewrite ]]
+
+        -- [[ DIRECTIVE #1: Remove refresh on MAIL_SHOW to prevent location changes ]]
+        -- The original AL:TriggerDebouncedRefresh(event) has been removed from this block.
+        elseif event == "MAIL_SHOW" then
+            -- This block is now intentionally empty.
 
         elseif event == "MERCHANT_SHOW" then
             AL:InitializeVendorHooks()

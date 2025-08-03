@@ -36,6 +36,10 @@ end
 
 -- Adds a record to the specified history table.
 function AL:AddToHistory(historyType, itemData)
+    if historyType == "purchases" and AL.isVendorPurchase then
+        return
+    end
+
     if not _G.AuctioneersLedgerFinances or not _G.AuctioneersLedgerFinances[historyType] then
         return
     end
