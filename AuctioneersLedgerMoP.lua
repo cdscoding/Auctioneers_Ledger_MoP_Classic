@@ -1,4 +1,4 @@
--- Auctioneer's Ledger MoP - v1.0.0 - Created by Clint Seewald (CS&A-Software)
+-- Auctioneer's Ledger MoP - v1.0.1 - Created by Clint Seewald (CS&A-Software)
 -- This file creates the main addon table and initializes all addon-wide variables.
 
 -- Create the main addon table if it doesn't exist
@@ -11,7 +11,7 @@ AL.LDB_PREFIX = "AuctioneersLedgerMoPDB"
 AL.ADDON_MSG_PREFIX = "ALMOP_MSG"
 
 -- Set the addon version for MoP
-AL.VERSION = "1.0.0"
+AL.VERSION = "1.0.1"
 
 -- This is the root of the addon's database.
 _G.AL_SavedData = _G.AL_SavedData or {}

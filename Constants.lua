@@ -1,6 +1,6 @@
 -- Auctioneer's Ledger - Constants
 -- This file contains all the static configuration values for the addon.
-AL.VERSION = "1.0.0" 
+AL.VERSION = "1.0.1" 
 
 -- Core numerical constants (independent)
 AL.COL_PADDING = 5
@@ -57,6 +57,8 @@ AL.BH_COL_DATE_WIDTH = 60
 
 -- MoP Change: Updated media path to new addon name
 AL.PATREON_LOGO_PATH = "Interface\\AddOns\\AuctioneersLedgerMoP\\Media\\PatreonLogo.tga"
+-- SURGICAL ADDITION: Added path for the Discord community logo.
+AL.DISCORD_LOGO_PATH = "Interface\\AddOns\\AuctioneersLedgerMoP\\Media\\DiscordLogo.tga"
 
 -- Popup Constants
 AL.POPUP_FEEDBACK_DURATION = 3.0

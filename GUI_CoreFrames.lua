@@ -71,7 +71,8 @@ function AL:CreateFrames()
             if _G.AL_SavedData.Settings.minimapIcon.hide then AL.LibDBIcon_Lib:Hide(AL.LDB_PREFIX) else AL.LibDBIcon_Lib:Show(AL.LDB_PREFIX) end
         end
     end, false, frameNameSuffix)
-    self.SupportMeButton = AL.createLeftPanelButton(lp, "SupportMe", "Patreon", function() AL:ToggleSupportWindow() end, false, frameNameSuffix)
+    -- SURGICAL CHANGE: Renamed button text to "Support & Community".
+    self.SupportMeButton = AL.createLeftPanelButton(lp, "SupportMe", "Support & Community", function() AL:ToggleSupportWindow() end, false, frameNameSuffix)
     self.SortAlphaButton = AL.createLeftPanelButton(lp, "SortAlpha", "Item Name (Grouped)", AL.SORT_ALPHA, true, frameNameSuffix)
     self.SortItemNameFlatButton = AL.createLeftPanelButton(lp, "SortItemNameFlat", "Item Name", AL.SORT_ITEM_NAME_FLAT, true, frameNameSuffix)
     self.SortCharacterButton = AL.createLeftPanelButton(lp, "SortCharacter", "By Character", AL.SORT_CHARACTER, true, frameNameSuffix)
