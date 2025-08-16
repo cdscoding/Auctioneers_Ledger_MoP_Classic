@@ -1,4 +1,4 @@
--- Auctioneer's Ledger MoP - v1.0.1 - Created by Clint Seewald (CS&A-Software)
+-- Auctioneer's Ledger MoP - v1.0.2 - Created by Clint Seewald (CS&A-Software)
 -- This file creates the main addon table and initializes all addon-wide variables.
 
 -- Create the main addon table if it doesn't exist
@@ -11,7 +11,7 @@ AL.LDB_PREFIX = "AuctioneersLedgerMoPDB"
 AL.ADDON_MSG_PREFIX = "ALMOP_MSG"
 
 -- Set the addon version for MoP
-AL.VERSION = "1.0.1"
+AL.VERSION = "1.0.2"
 
 -- This is the root of the addon's database.
 _G.AL_SavedData = _G.AL_SavedData or {}
@@ -79,6 +79,7 @@ AL.HelpWindowScrollChild = nil
 AL.HelpWindowFontString = nil
 AL.SupportWindow = nil
 AL.BlasterWindow = nil
+AL.WelcomeWindow = nil -- SURGICAL ADDITION: Frame variable for the new welcome window.
 AL.testSetScriptControlDone = false
 AL.mainDividers = AL.mainDividers or {}
 AL.postItemHooked = false
@@ -124,6 +125,10 @@ function AL:NukeLedgerAndHistory()
         _G.AL_SavedData.PendingAuctions = {}
         if _G.AL_SavedData.Settings and _G.AL_SavedData.Settings.itemExpansionStates then
             _G.AL_SavedData.Settings.itemExpansionStates = {}
+        end
+        -- SURGICAL ADDITION: Reset the welcome window setting when the ledger is nuked.
+        if _G.AL_SavedData.Settings then
+            _G.AL_SavedData.Settings.showWelcomeWindow = true
         end
     end
 

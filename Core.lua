@@ -174,6 +174,11 @@ function AL:HandleGameReady()
         
         if self.MainWindow and self.MainWindow:IsShown() then self:RefreshLedgerDisplay() end
         
+        -- SURGICAL ADDITION: Show the welcome window on first login or after a data nuke.
+        if _G.AL_SavedData and _G.AL_SavedData.Settings.showWelcomeWindow then
+            AL:ShowWelcomeWindow()
+        end
+        
         -- Unregister this event now that we're initialized
         local eventHandler = _G["AL_EventHandler_v" .. AL.VERSION:gsub("%.","_")]
         if eventHandler then

@@ -294,6 +294,143 @@ function AL:ToggleSupportWindow()
     else self:HideSupportWindow() end
 end
 
+-- SURGICAL ADDITION: New functions for the Welcome Window
+function AL:CreateWelcomeWindow()
+    if self.WelcomeWindow then return end
+    local frameNameSuffix = "_v" .. self.VERSION:gsub("%.","_")
+    local ww = CreateFrame("Frame", "AL_WelcomeWindow" .. frameNameSuffix, UIParent, "BasicFrameTemplateWithInset")
+    self.WelcomeWindow = ww
+    ww:SetSize(500, 580)
+    ww:SetFrameStrata("DIALOG")
+    ww:SetFrameLevel(2000)
+    ww.TitleText:SetText("Welcome to Auctioneer's Ledger!")
+    ww:SetMovable(true)
+    ww:RegisterForDrag("LeftButton")
+    ww:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    ww:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    ww:SetClampedToScreen(true)
+    ww.CloseButton:SetScript("OnClick", function() self:HideWelcomeWindow() end)
+
+    local scroll = CreateFrame("ScrollFrame", "AL_WelcomeScrollFrame" .. frameNameSuffix, ww, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", ww, "TOPLEFT", 8, -30)
+    scroll:SetPoint("BOTTOMRIGHT", ww, "BOTTOMRIGHT", -30, 40)
+    local child = CreateFrame("Frame", "AL_WelcomeScrollChild" .. frameNameSuffix, scroll)
+    child:SetWidth(ww:GetWidth() - 50)
+    scroll:SetScrollChild(child)
+
+    -- SURGICAL FIX: Reverted to manual Y-offset tracking for stability.
+    local currentY = -15
+
+    local tutorialHeader = child:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    tutorialHeader:SetPoint("TOPLEFT", 10, currentY)
+    tutorialHeader:SetTextColor(1, 0.82, 0)
+    tutorialHeader:SetText("Quick Start Guide")
+    currentY = currentY - tutorialHeader:GetStringHeight() - 10
+
+    local tutorialText = child:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    tutorialText:SetPoint("TOPLEFT", tutorialHeader, "BOTTOMLEFT", 0, -10)
+    tutorialText:SetWidth(child:GetWidth() - 20)
+    tutorialText:SetJustifyH("LEFT")
+    local tutorialContent = {
+        "1. Open the main window by typing |cffeda55f/al|r or |cffeda55f/aledger|r in chat, or by clicking the minimap icon.",
+        "2. To start tracking an item, click the |cffeda55f'Track New Item'|r button on the left panel.",
+        "3. A small popup will appear. Simply drag an item from your bags onto this popup to add it to your ledger.",
+        "4. You can also click |cffeda55f'Add All Eligible Items From Bags'|r to quickly track everything you can sell.",
+        "5. Once items are tracked, open the Auction House to use the |cffeda55fAL Blaster|r for high-speed posting!"
+    }
+    tutorialText:SetText(table.concat(tutorialContent, "\n\n"))
+    currentY = currentY - tutorialText:GetStringHeight() - 15
+
+    local divider1 = child:CreateTexture(nil, "ARTWORK")
+    divider1:SetPoint("TOPLEFT", 10, currentY)
+    divider1:SetPoint("RIGHT", child, "RIGHT", -10, 0)
+    divider1:SetHeight(1)
+    divider1:SetColorTexture(0.5, 0.5, 0.5, 0.8)
+    currentY = currentY - 15
+
+    local discordLogo = child:CreateTexture(nil, "ARTWORK")
+    discordLogo:SetSize(256, 86)
+    discordLogo:SetTexture(AL.DISCORD_LOGO_PATH)
+    discordLogo:SetPoint("TOP", child, "TOP", 0, currentY)
+    currentY = currentY - 86 - 10
+
+    local discordMessageFS = child:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    discordMessageFS:SetPoint("TOP", discordLogo, "BOTTOM", 0, -5)
+    discordMessageFS:SetWidth(child:GetWidth() - 20)
+    discordMessageFS:SetJustifyH("CENTER")
+    discordMessageFS:SetTextColor(unpack(AL.COLOR_AH_BLUE))
+    discordMessageFS:SetText("Join the community Discord for bug reports, suggestions, and to chat with other users!")
+    currentY = currentY - discordMessageFS:GetStringHeight() - 10
+
+    local discordLinkBox = CreateFrame("EditBox", nil, child, "InputBoxTemplate")
+    discordLinkBox:SetPoint("TOP", discordMessageFS, "BOTTOM", 0, -5)
+    discordLinkBox:SetSize(child:GetWidth() - 40, 30)
+    discordLinkBox:SetText("https://discord.gg/5TfC7ey3Te")
+    discordLinkBox:SetAutoFocus(false)
+    discordLinkBox:HookScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    discordLinkBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    discordLinkBox:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+    currentY = currentY - 30 - 15
+
+    local patreonLogo = child:CreateTexture(nil, "ARTWORK")
+    patreonLogo:SetSize(256, 64)
+    patreonLogo:SetTexture(AL.PATREON_LOGO_PATH)
+    patreonLogo:SetPoint("TOP", discordLinkBox, "BOTTOM", 0, -15)
+    currentY = currentY - 64 - 10
+
+    local patreonMessageFS = child:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    patreonMessageFS:SetPoint("TOP", patreonLogo, "BOTTOM", 0, -5)
+    patreonMessageFS:SetWidth(child:GetWidth() - 20)
+    patreonMessageFS:SetJustifyH("CENTER")
+    patreonMessageFS:SetTextColor(unpack(AL.COLOR_BANK_GOLD))
+    patreonMessageFS:SetText("Auctioneer's Ledger is a passion project. If you find the addon valuable and want to support its continued development, please consider becoming a patron!")
+    currentY = currentY - patreonMessageFS:GetStringHeight() - 10
+
+    local patreonLinkBox = CreateFrame("EditBox", nil, child, "InputBoxTemplate")
+    patreonLinkBox:SetPoint("TOP", patreonMessageFS, "BOTTOM", 0, -5)
+    patreonLinkBox:SetSize(child:GetWidth() - 40, 30)
+    patreonLinkBox:SetText("https://www.patreon.com/csasoftware")
+    patreonLinkBox:SetAutoFocus(false)
+    patreonLinkBox:HookScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    patreonLinkBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    patreonLinkBox:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+    currentY = currentY - 30 - 5
+
+    local instructionLabel = child:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    instructionLabel:SetPoint("TOP", patreonLinkBox, "BOTTOM", 0, 0)
+    instructionLabel:SetTextColor(1, 0.82, 0, 1)
+    instructionLabel:SetText("Press Ctrl+C to copy the URL.")
+    currentY = currentY - instructionLabel:GetStringHeight()
+
+    child:SetHeight(math.abs(currentY) + 20)
+
+    local checkbox = CreateFrame("CheckButton", "AL_WelcomeDoNotShowCheckButton", ww, "UICheckButtonTemplate")
+    checkbox:SetPoint("BOTTOMLEFT", ww, "BOTTOMLEFT", 15, 15)
+    _G[checkbox:GetName() .. "Text"]:SetText("Do not show this window again.")
+    checkbox:SetScript("OnClick", function(self)
+        if self:GetChecked() then
+            _G.AL_SavedData.Settings.showWelcomeWindow = false
+        else
+            _G.AL_SavedData.Settings.showWelcomeWindow = true
+        end
+    end)
+
+    ww:Hide()
+end
+
+function AL:ShowWelcomeWindow()
+    if not self.WelcomeWindow then self:CreateWelcomeWindow() end
+    if not self.WelcomeWindow then return end
+    self.WelcomeWindow:ClearAllPoints()
+    self.WelcomeWindow:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    self.WelcomeWindow:Show()
+    self.WelcomeWindow:Raise()
+end
+
+function AL:HideWelcomeWindow()
+    if self.WelcomeWindow and self.WelcomeWindow:IsShown() then self.WelcomeWindow:Hide() end
+end
+
 -- Populates the text content of the help window
 function AL:PopulateHelpWindowText()
     if not self.HelpWindowFontString then return end
