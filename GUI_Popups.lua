@@ -524,35 +524,9 @@ function AL:PopulateHelpWindowText()
     self.HelpWindowScrollChild:SetHeight(math.max(scrollFrameHeight - 10, fsHeight + 20)) end end)
 end
 
--- Controls periodic refreshes based on active tab.
-function AL:StartStopPeriodicRefresh()
-    if self.periodicRefreshTimer then
-        self.periodicRefreshTimer:SetScript("OnUpdate", nil)
-        self.periodicRefreshTimer = nil
-    end
-
-    if not self.MainWindow or not self.MainWindow:IsShown() or self.currentActiveTab == AL.VIEW_AUCTION_PRICING or self.currentActiveTab == AL.VIEW_AUCTION_SETTINGS then
-        return
-    end
-
-    local interval = tonumber(AL.PERIODIC_REFRESH_INTERVAL) or 7.0
-    if type(interval) ~= "number" or interval <= 0 then interval = 7.0 end
-    
-    self.periodicRefreshTimer = CreateFrame("Frame")
-    local elapsed = 0
-    self.periodicRefreshTimer:SetScript("OnUpdate", function(self_frame, delta)
-        elapsed = elapsed + delta
-        if elapsed >= interval then
-            elapsed = 0
-            if AL.MainWindow and AL.MainWindow:IsShown() and AL.currentActiveTab ~= AL.VIEW_AUCTION_PRICING and AL.currentActiveTab ~= AL.VIEW_AUCTION_SETTINGS then
-                AL:RefreshLedgerDisplay()
-            else
-                self_frame:SetScript("OnUpdate", nil)
-                AL.periodicRefreshTimer = nil
-            end
-        end
-    end)
-end
+-- RETAIL CHANGE: This function is removed. Refreshes are now purely event-driven.
+-- function AL:StartStopPeriodicRefresh()
+-- end
 
 
 -- Applies the saved window state (position, size, visibility)
@@ -587,7 +561,7 @@ function AL:ApplyWindowState()
         AL:HideHelpWindow()
         AL:HideSupportWindow()
     end
-    AL:StartStopPeriodicRefresh()
+    -- RETAIL CHANGE: Removed call to the periodic refresh timer.
 end
 
 -- Toggles the main window's visibility
@@ -621,7 +595,7 @@ function AL:ToggleMainWindow()
         end
         AL:ApplyWindowState()
     end
-    AL:StartStopPeriodicRefresh()
+    -- RETAIL CHANGE: Removed call to the periodic refresh timer.
 end
 
 -- Define StaticPopupDialogs for confirmation dialogs
@@ -664,6 +638,7 @@ StaticPopupDialogs["AL_CONFIRM_TRACK_NEW_PURCHASE"] = {
     button2 = "No, Ignore",
     OnAccept = function(self, data)
         if data and data.itemLink and data.itemID and data.price and data.quantity then
+            -- RETAIL CHANGE: Adopted more robust logic flow from retail.
             local success, msg = AL:InternalAddItem(data.itemLink, UnitName("player"), GetRealmName())
             if success then
                 AL:RecordTransaction("BUY", "AUCTION", data.itemID, data.price, data.quantity)
@@ -705,6 +680,7 @@ StaticPopupDialogs["AL_CONFIRM_TRACK_NEW_VENDOR_PURCHASE"] = {
     button2 = "No, Ignore",
     OnAccept = function(self, data)
         if data and data.itemLink and data.itemID and data.price and data.quantity then
+            -- RETAIL CHANGE: Adopted more robust logic flow from retail.
             local success, msg = AL:InternalAddItem(data.itemLink, UnitName("player"), GetRealmName())
             if success then
                 AL:RecordTransaction("BUY", "VENDOR", data.itemID, data.price, data.quantity)
@@ -749,3 +725,19 @@ StaticPopupDialogs["AL_CONFIRM_NUKE_HISTORY"] = {
     preferredIndex = 3,
     showAlert = true,
 }
+
+StaticPopupDialogs["AL_CONFIRM_CANCEL_UNDERCUT"] = {
+    text = "Do you want to scan all of your current auctions to find items that have been undercut? This may take a moment.",
+    button1 = "Yes, Scan Auctions",
+    button2 = NO,
+    OnAccept = function()
+        if AL and AL.StartCancelScan then
+            AL:StartCancelScan()
+        end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+

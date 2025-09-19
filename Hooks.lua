@@ -360,11 +360,20 @@ function AL:InitializeVendorHooks()
         if isTracked then
             AL:RecordTransaction("BUY", "VENDOR", itemID, price, quantity)
         else
-            local name = GetItemInfo(itemLink)
-            if not name then return end
+            -- RETAIL CHANGE: Check setting before showing popup
+            if _G.AL_SavedData and _G.AL_SavedData.Settings and _G.AL_SavedData.Settings.autoAddNewItems then
+                local success, msg = AL:InternalAddItem(itemLink, UnitName("player"), GetRealmName())
+                if success then
+                    AL:RecordTransaction("BUY", "VENDOR", itemID, price, quantity)
+                    AL:RefreshLedgerDisplay()
+                end
+            else
+                local name = GetItemInfo(itemLink)
+                if not name then return end
 
-            local popupData = { itemLink = itemLink, itemID = itemID, price = price, quantity = quantity }
-            StaticPopup_Show("AL_CONFIRM_TRACK_NEW_VENDOR_PURCHASE", name, nil, popupData)
+                local popupData = { itemLink = itemLink, itemID = itemID, price = price, quantity = quantity }
+                StaticPopup_Show("AL_CONFIRM_TRACK_NEW_VENDOR_PURCHASE", name, nil, popupData)
+            end
         end
     end
 
@@ -405,3 +414,4 @@ function AL:GetItemIDFromLink(itemLink)
     if not itemLink then return nil end
     return tonumber(itemLink:match("item:(%d+)"))
 end
+

@@ -78,7 +78,17 @@ function AL:ProcessPurchase(itemName, itemLink, quantity, price)
         end
         -- [[ DIRECTIVE #3 END ]]
     else
-        StaticPopup_Show("AL_CONFIRM_TRACK_NEW_PURCHASE", itemName, nil, { itemName = itemName, itemLink = itemLink, itemID = itemID, price = price, quantity = quantity })
+        -- RETAIL CHANGE: Check setting before showing popup
+        if _G.AL_SavedData and _G.AL_SavedData.Settings and _G.AL_SavedData.Settings.autoAddNewItems then
+            local success, msg = AL:InternalAddItem(itemLink, UnitName("player"), GetRealmName())
+            if success then
+                -- Retroactively record the transaction that triggered this
+                self:RecordTransaction("BUY", "AUCTION", itemID, price, quantity)
+                self:RefreshLedgerDisplay()
+            end
+        else
+            StaticPopup_Show("AL_CONFIRM_TRACK_NEW_PURCHASE", itemName, nil, { itemName = itemName, itemLink = itemLink, itemID = itemID, price = price, quantity = quantity })
+        end
     end
 end
 
@@ -153,7 +163,7 @@ function AL:HandlePlayerLogin()
     if not self.libsReady then self:InitializeLibs() end
     
     local success, err = pcall(function()
-        AL:StartStopPeriodicRefresh()
+        -- RETAIL CHANGE: Removed periodic refresh timer.
         AL.previousMoney = GetMoney()
         AL:BuildSalesCache()
     end)
@@ -293,3 +303,4 @@ eventHandlerFrame:SetScript("OnEvent", function(selfFrame, event, ...)
     end)
     if not success then AL:ErrorHandler(err, "OnEvent - " .. event) end
 end)
+

@@ -100,6 +100,7 @@ function AL:UpdateLayout()
         end
     end
 
+    -- RETAIL CHANGE: Position the Nuke buttons and new checkbox
     if self.NukeHistoryButton then
         self.NukeHistoryButton:SetSize(100, 22)
         self.NukeHistoryButton:SetPoint("TOPRIGHT", self.MainWindow, "TOPRIGHT", -sideInset, tabTop)
@@ -107,6 +108,11 @@ function AL:UpdateLayout()
     if self.NukeLedgerButton then
         self.NukeLedgerButton:SetSize(100, 22)
         self.NukeLedgerButton:SetPoint("TOPRIGHT", self.NukeHistoryButton, "TOPLEFT", -AL.BUTTON_SPACING, 0)
+    end
+    if self.AutoAddNewItemsCheckButton then
+        self.AutoAddNewItemsCheckButton:SetPoint("RIGHT", self.NukeLedgerButton, "LEFT", -AL.BUTTON_SPACING * 42, 0)
+        local shouldBeChecked = _G.AL_SavedData.Settings and _G.AL_SavedData.Settings.autoAddNewItems
+        self.AutoAddNewItemsCheckButton:SetChecked(shouldBeChecked)
     end
 
     local contentTopY = tabTop + AL.TAB_BUTTON_HEIGHT + AL.COL_PADDING + AL.MAIN_CONTENT_VERTICAL_OFFSET_ADJUSTMENT

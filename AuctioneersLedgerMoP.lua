@@ -1,4 +1,4 @@
--- Auctioneer's Ledger MoP - v1.0.2.1 - Created by Clint Seewald (CS&A-Software)
+-- Auctioneer's Ledger MoP - v1.0.3 - Created by Clint Seewald (CS&A-Software)
 -- This file creates the main addon table and initializes all addon-wide variables.
 
 -- Create the main addon table if it doesn't exist
@@ -11,7 +11,7 @@ AL.LDB_PREFIX = "AuctioneersLedgerMoPDB"
 AL.ADDON_MSG_PREFIX = "ALMOP_MSG"
 
 -- Set the addon version for MoP
-AL.VERSION = "1.0.2.1"
+AL.VERSION = "1.0.3"
 
 -- This is the root of the addon's database.
 _G.AL_SavedData = _G.AL_SavedData or {}
@@ -29,7 +29,6 @@ AL.revertPopupTextTimer = nil
 AL.itemRowFrames = {}
 AL.eventRefreshTimer = nil
 AL.eventDebounceCounter = 0
-AL.periodicRefreshTimer = nil
 AL.addonLoadedProcessed = false
 AL.libsReady = false
 AL.LDB_Lib = nil
@@ -44,6 +43,7 @@ AL.ToggleMinimapButton = nil
 AL.SupportMeButton = nil
 AL.NukeLedgerButton = nil
 AL.NukeHistoryButton = nil
+AL.AutoAddNewItemsCheckButton = nil -- RETAIL CHANGE: Added for the new checkbox
 AL.WarbandStockTab = nil
 AL.AuctionFinancesTab = nil
 AL.VendorFinancesTab = nil

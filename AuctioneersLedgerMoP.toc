@@ -1,7 +1,7 @@
 ## Interface: 50500
 ## Title: AuctioneersLedgerMoP
 ## Author: Clint Seewald (CS&A-Software)
-## Version: 1.0.2.1
+## Version: 1.0.3
 ## Notes: Release – Auctioneer’s Ledger is now fully compatible with Mists of Pandaria Classic! Enjoy comprehensive inventory and auction tracking, plus the AL Blaster for lightning-fast posting and cancellation.
 ## SavedVariables: AL_SavedData, AuctioneersLedgerFinances
 ## DefaultState: enabled

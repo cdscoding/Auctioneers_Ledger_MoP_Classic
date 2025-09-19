@@ -14,6 +14,7 @@ function AL:CreateFrames()
         self.MainWindow,self.LeftPanel,self.CreateReminderButton,self.RefreshListButton,self.HelpWindowButton,self.ToggleMinimapButton,self.SupportMeButton,self.ColumnHeaderFrame,self.ScrollFrame,self.ScrollChild,self.ReminderPopup=nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil
         self.WarbandStockTab, self.AuctionFinancesTab, self.VendorFinancesTab, self.AuctionPricingTab, self.AuctionSettingsTab = nil, nil, nil, nil, nil
         self.NukeLedgerButton, self.NukeHistoryButton = nil, nil
+        self.AutoAddNewItemsCheckButton = nil -- RETAIL CHANGE: Add checkbox to reset list
         self.SortAlphaButton, self.SortItemNameFlatButton, self.SortBagsButton, self.SortBankButton, self.SortMailButton, self.SortAuctionButton, self.SortLimboButton = nil,nil,nil,nil,nil,nil,nil
         self.SortCharacterButton, self.SortRealmButton = nil, nil
         self.LabelSortBy, self.LabelFilterLocation, self.LabelFilterQuality, self.LabelFilterLedger, self.LabelFilterStackability = nil, nil, nil, nil, nil
@@ -55,6 +56,14 @@ function AL:CreateFrames()
     self.NukeHistoryButton = CreateFrame("Button", "AL_NukeHistoryButton" .. frameNameSuffix, f, "UIPanelButtonTemplate")
     self.NukeHistoryButton:SetText("Nuke History")
     self.NukeHistoryButton:SetScript("OnClick", function() StaticPopup_Show("AL_CONFIRM_NUKE_HISTORY") end)
+
+    -- RETAIL CHANGE: Create the Auto-Add checkbox
+    self.AutoAddNewItemsCheckButton = CreateFrame("CheckButton", "AL_AutoAddNewItemsCheckButton" .. frameNameSuffix, f, "UICheckButtonTemplate")
+    _G["AL_AutoAddNewItemsCheckButton" .. frameNameSuffix.."Text"]:SetText("Auto add new vendor or auction items.")
+    self.AutoAddNewItemsCheckButton:SetScript("OnClick", function(self)
+        if not _G.AL_SavedData.Settings then _G.AL_SavedData.Settings = {} end
+        _G.AL_SavedData.Settings.autoAddNewItems = self:GetChecked()
+    end)
 
     -- BUG FIX: Create the LeftPanel using a template that includes backdrop support.
     local lp=CreateFrame("Frame","AL_LeftPanel" .. frameNameSuffix, self.MainWindow, "BackdropTemplate")
